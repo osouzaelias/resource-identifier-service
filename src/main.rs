@@ -1,30 +1,42 @@
+#[cfg(test)]
+mod tests;
+
 use warp::{Filter, http::StatusCode, Rejection, Reply};
 use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
+use log::info;
+
 
 #[derive(Deserialize)]
 struct Input {
-    param1: String,
-    param2: String,
-    param3: String,
-    param4: String,
-    param5: String,
+    legal_entity: String,
+    tenant: String,
+    segment: String,
+    payment_instrument: String,
+    customer_id: String,
 }
 
 #[derive(Serialize)]
 struct Response {
-    formatted_string: String,
+    ris: String,
 }
 
-fn validate_input(input: Input) -> Result<Input, Rejection> {
-    if input.param1.trim().is_empty()
-        || input.param2.trim().is_empty()
-        || input.param3.trim().is_empty()
-        || input.param4.trim().is_empty()
-        || input.param5.trim().is_empty() {
+fn create_irn(input: &Input) -> String {
+    format!(
+        "ris:{}:{}:{}:{}:{}",
+        input.legal_entity, input.tenant, input.segment, input.payment_instrument, input.customer_id
+    )
+}
+
+fn validate_input(input: &Input) -> Result<(), Rejection> {
+    if input.legal_entity.trim().is_empty() ||
+        input.tenant.trim().is_empty() ||
+        input.segment.trim().is_empty() ||
+        input.payment_instrument.trim().is_empty() ||
+        input.customer_id.trim().is_empty() {
         Err(warp::reject::custom(InvalidInput))
     } else {
-        Ok(input)
+        Ok(())
     }
 }
 
@@ -42,18 +54,19 @@ async fn handle_rejection(error: Rejection) -> Result<impl Reply, Infallible> {
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
     let format_route = warp::post()
         .and(warp::path("format"))
         .and(warp::body::json())
         .and_then(|input: Input| async move {
-            validate_input(input).map(|input| {
-                let formatted_string = format!(
-                    "Parâmetro 1: {}, Parâmetro 2: {}, Parâmetro 3: {}, Parâmetro 4: {}, Parâmetro 5: {}",
-                    input.param1, input.param2, input.param3, input.param4, input.param5
-                );
-                warp::reply::json(&Response { formatted_string })
-            })
+            info!("Request for /format received");
+
+            validate_input(&input)?;
+            let ris = create_irn(&input);
+            info!("Responding to the request with '{}'", ris);
+            Ok::<_, Rejection>(warp::reply::json(&Response { ris }))
         });
+
 
     let health_route = warp::get()
         .and(warp::path("health"))
