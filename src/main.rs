@@ -21,7 +21,7 @@ struct Response {
     ris: String,
 }
 
-fn create_irn(input: &Input) -> String {
+fn create_ris(input: &Input) -> String {
     format!(
         "ris:{}:{}:{}:{}:{}",
         input.legal_entity, input.tenant, input.segment, input.payment_instrument, input.customer_id
@@ -62,7 +62,7 @@ async fn main() {
             info!("Request for /format received");
 
             validate_input(&input)?;
-            let ris = create_irn(&input);
+            let ris = create_ris(&input);
             info!("Responding to the request with '{}'", ris);
             Ok::<_, Rejection>(warp::reply::json(&Response { ris }))
         });

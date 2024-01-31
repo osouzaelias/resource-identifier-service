@@ -31,7 +31,7 @@ mod tests {
     }
 
     #[test]
-    fn test_irn_format() {
+    fn test_ris_format() {
         let input = Input {
             legal_entity: "Itau".to_string(),
             tenant: "Banking".to_string(),
@@ -40,7 +40,7 @@ mod tests {
             customer_id: "123456789".to_string(),
         };
 
-        let ris = create_irn(&input);
+        let ris = create_ris(&input);
         let re = Regex::new(r"^ris:[\w]+:[\w]+:[\w]+:[\w]+:[\w]+$").unwrap();
         assert!(re.is_match(&ris));
     }
